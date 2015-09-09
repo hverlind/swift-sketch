@@ -11,8 +11,8 @@ import CoreBluetooth
 
 class ViewController: UIViewController, CBPeripheralManagerDelegate, CBCentralManagerDelegate, CBPeripheralDelegate {
     
-    let serviceType = CBUUID.UUIDWithString("89CAFFF0-275D-43DC-AE8F-0D083678A265")
-    let characteristicType = CBUUID.UUIDWithString("3C10F17E-BD4B-46F6-B9AE-C43736504A56")
+    let serviceType = CBUUID(string: "89CAFFF0-275D-43DC-AE8F-0D083678A265")
+    let characteristicType = CBUUID(string:"3C10F17E-BD4B-46F6-B9AE-C43736504A56")
 
     var peripheralManager: CBPeripheralManager!
     
@@ -33,8 +33,13 @@ class ViewController: UIViewController, CBPeripheralManagerDelegate, CBCentralMa
         }
     }
     
-    override func touchesBegan(touches: NSSet, withEvent event: UIEvent) {
-        centralManager.scanForPeripheralsWithServices([serviceType], options: nil)
+    override func touchesBegan(touches: Set<NSObject>, withEvent event: UIEvent) {
+        if let touch = touches.first as? UITouch {
+            
+            centralManager.scanForPeripheralsWithServices([serviceType], options: nil)
+            // ...
+        }
+        super.touchesBegan(touches , withEvent:event)
     }
     
     func centralManager(central: CBCentralManager!, didDiscoverPeripheral peripheral: CBPeripheral!, advertisementData: [NSObject : AnyObject]!, RSSI: NSNumber!) {
@@ -48,11 +53,11 @@ class ViewController: UIViewController, CBPeripheralManagerDelegate, CBCentralMa
     }
     
     func peripheral(peripheral: CBPeripheral!, didDiscoverServices error: NSError!) {
-        peripheral.discoverCharacteristics([characteristicType], forService: peripheral.services.first as CBService)
+        peripheral.discoverCharacteristics([characteristicType], forService: peripheral.services.first as! CBService)
     }
     
     func peripheral(peripheral: CBPeripheral!, didDiscoverCharacteristicsForService service: CBService!, error: NSError!) {
-        characteristic = service.characteristics.first as CBCharacteristic?
+        characteristic = service.characteristics.first as! CBCharacteristic?
     }
     
     func peripheralManagerDidUpdateState(peripheral: CBPeripheralManager!) {
@@ -71,21 +76,29 @@ class ViewController: UIViewController, CBPeripheralManagerDelegate, CBCentralMa
     }
     
     func peripheralManager(peripheral: CBPeripheralManager!, didReceiveWriteRequests requests: [AnyObject]!) {
-        for request in requests as [CBATTRequest] {
-            let point = CGPointFromString(NSString(data: request.value, encoding: NSUTF8StringEncoding))
-            (view as View).addPoint(point)
+        for request in requests as! [CBATTRequest] {
+        
+            let point = CGPointFromString(NSString(data: request.value, encoding: NSUTF8StringEncoding)! as String)
+            (view as! View).addPoint(point)
         }
     }
     
-    override func touchesMoved(touches: NSSet, withEvent event: UIEvent) {
-        let touch = touches.anyObject() as UITouch
-        let point = touch.locationInView(view)
-        (view as View).addPoint(point)
+    override func touchesMoved(touches: Set<NSObject>, withEvent event: UIEvent) {
         
-        if let characteristic = characteristic {
-            let data = NSStringFromCGPoint(point).dataUsingEncoding(NSUTF8StringEncoding, allowLossyConversion: false)
-            peripheral?.writeValue(data, forCharacteristic: characteristic, type: .WithoutResponse)
+        if let touch = touches.first as? UITouch {
+            
+//            let touch = touches.anyObject() as! UITouch
+            let point = touch.locationInView(view)
+            (view as! View).addPoint(point)
+            
+            if let characteristic = characteristic {
+                let data = NSStringFromCGPoint(point).dataUsingEncoding(NSUTF8StringEncoding, allowLossyConversion: false)
+                peripheral?.writeValue(data, forCharacteristic: characteristic, type: .WithoutResponse)
+            }
         }
+        super.touchesMoved(touches , withEvent:event)
+        
+        
     }
 
 }
